@@ -1,0 +1,6 @@
+#!/usr/bin/env python
+
+import brpm
+
+if __name__ == '__main__':
+    brpm.main()

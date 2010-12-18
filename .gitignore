@@ -1,0 +1,6 @@
+*.cache
+*.db
+*.log
+*.pid
+*.pyc
+*.swp
