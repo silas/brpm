@@ -69,8 +69,6 @@ class Build(object):
         command = 'mock -vr ${dist}-${arch}'
         command += ' --resultdir=${build_path}'
         command += ' ${srpm_path}'
-        if self.options.no_clean:
-            command += ' --no-clean'
         return ops.utils.run(
             command,
             dist=self.options.dist,
@@ -128,12 +126,6 @@ def main():
         default=arch,
         help='comma separated list of architectures (%s)' % arch,
         metavar='ARCH',
-    )
-    parser.add_option(
-        '--no-clean',
-        dest='no_clean',
-        action='store_true',
-        help='don\'t clean up before build',
     )
     options, args = parser.parse_args()
 
