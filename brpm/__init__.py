@@ -130,10 +130,7 @@ def main():
     options, args = parser.parse_args()
 
     if not args:
-        args = glob.glob('*.spec')
-
-    if not args:
-        ops.utils.exit(code=1, text='File required')
+        args = ['.']
 
     if not options.dist:
         ops.utils.exit(code=1, text='Dist option is required')
@@ -149,7 +146,10 @@ def main():
 
     for path in args:
         path = os.path.realpath(path)
-        if not os.path.isfile(path):
+        if os.path.isdir(path):
+            args += glob.glob('*.spec')
+            continue
+        elif not os.path.isfile(path):
             ops.utils.exit(code=1, text='File not found: %s' % path)
         if fnmatch.fnmatch(path, '*.json'):
             try:
@@ -169,6 +169,9 @@ def main():
             build_list.append({'spec': os.path.realpath(path)})
         else:
             ops.utils.exit(code=1, text='Unknown file type: %s' % path)
+
+    if not build_list:
+        ops.utils.exit(code=1, text='Nothing to build')
 
     for data in build_list:
         try:
