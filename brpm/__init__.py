@@ -22,7 +22,7 @@ class Build(object):
         ops.utils.mkdir(self.build_path)
 
         # Build RPMs
-        for arch in ['srpms'] + self.options.arch:
+        for arch in ['SRPMS'] + self.options.arch:
             path = os.path.join(self.repo_path, 'build', arch)
             ops.utils.mkdir(path)
             if not os.path.exists(os.path.join(path, 'repodata')):
@@ -35,7 +35,7 @@ class Build(object):
         else:
             ops.utils.exit(code=result.code, text=result.stderr)
 
-        srpm_dst_path = os.path.join(self.repo_path, 'build', 'srpms')
+        srpm_dst_path = os.path.join(self.repo_path, 'build', 'SRPMS')
 
         # Build RPMs
         for arch in self.options.arch:
@@ -47,7 +47,15 @@ class Build(object):
             # TODO(silas):  don't build multiple times on noarch
             ops.utils.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path)
             ops.utils.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=arch, dst=arch_dst_path)
-            ops.utils.run('mv ${src}/*.el5.src.rpm ${dst}', src=self.build_path, dst=srpm_dst_path)
+            # Find and move distribution srpm
+            srpms = glob.glob(os.path.join(self.build_path, '*.src.rpm'))
+            srpms = [os.path.basename(path) for path in srpms]
+            srpm_name = os.path.basename(self.srpm_path)
+            if srpm_name in srpms:
+                srpms.remove(srpm_name)
+            srpm_path = os.path.join(self.build_path, srpms[0]) if srpms else self.srpm_path
+            ops.utils.run('mv ${src} ${dst}', src=srpm_path, dst=srpm_dst_path)
+            # Update repository
             ops.utils.run('createrepo --update ${dst}', dst=arch_dst_path)
 
     def srpm(self):
