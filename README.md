@@ -14,7 +14,7 @@ Build `python-gevent.spec` for Fedora 13 i386 and x86\_64:
 
     brpm --dist=fedora-13 --arch=i386,x86_64 ./python-gevent.spec
 
-If we have a `build.json` which looks something like:
+If we have a `build.json` file which looks something like:
 
     [
       {"spec": "python-asyncmongo/python-asyncmongo.spec"},
