@@ -3,6 +3,32 @@ brpm
 
 brpm is a simple tool that makes building RPMs locally a little easier.
 
+### Usage
+
+    # Build spec files in the current working directory for the arch and dist
+    # of the build machine
+    brpm
+
+    # Build file.spec for Fedora 13 i386 and x86_64
+    brpm --dist=fedora-13 --arch=i386,x86_64 ./bla.spec
+
+    # Where build.json looks something like
+    cat ./build.json
+    [
+      {"spec": "python-asyncmongo/python-asyncmongo.spec"},
+      {"spec": "python-gevent/python-gevent.spec"},
+      {"spec": "python-redis/python-redis.spec"}
+    ]
+
+    # Build all RPMs
+    brpm ./build.json
+
+    # Build all RPMs starting from python-gevent
+    brpm ./build.json --start=python-gevent
+
+    # Build only python-redis
+    brpm ./build.json --only=python-redis
+
 ### Requirements
 
 * Python >= 2.6
