@@ -10,11 +10,11 @@ build machine:
 
     brpm
 
-Build `file.spec` for Fedora 13 i386 and x86\_64:
+Build `python-gevent.spec` for Fedora 13 i386 and x86\_64:
 
     brpm --dist=fedora-13 --arch=i386,x86_64 ./python-gevent.spec
 
-Where `build.json` looks something like:
+If we have a `build.json` which looks something like:
 
     [
       {"spec": "python-asyncmongo/python-asyncmongo.spec"},
@@ -22,15 +22,15 @@ Where `build.json` looks something like:
       {"spec": "python-redis/python-redis.spec"}
     ]
 
-Build all RPMs:
+We can build all those RPMs with the following command:
 
     brpm ./build.json
 
-Build all RPMs starting from `python-gevent`:
+Or just those starting at `python-gevent`:
 
     brpm ./build.json --start=python-gevent
 
-Build only `python-redis`:
+Or only `python-redis`:
 
     brpm ./build.json --only=python-redis
 
