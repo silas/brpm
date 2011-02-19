@@ -19,6 +19,7 @@ class Build(object):
 
     def __init__(self, options, data):
         self.options = options
+        self.dist_name, self.dist_version = options.dist.split('-')
         self.spec_path = data['spec']
         self.root_path = os.path.dirname(self.spec_path)
         self.build_path = os.path.join(self.root_path, 'build')
@@ -30,12 +31,13 @@ class Build(object):
             self.rpm_spec = None
 
     def run(self):
-        ops.utils.rm(self.build_path, recursive=True)
+        if os.path.exists(self.build_path):
+            ops.utils.rm(self.build_path, recursive=True)
         ops.utils.mkdir(self.build_path)
 
         # Build repository directories
         for arch in ['SRPMS'] + self.options.arch:
-            path = os.path.join(self.repo_path, 'build', arch)
+            path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, arch)
             ops.utils.mkdir(path)
             if not os.path.exists(os.path.join(path, 'repodata')):
                 ops.utils.run('createrepo --update ${dst}', dst=path)
@@ -50,14 +52,14 @@ class Build(object):
         else:
             ops.utils.exit(code=result.code, text=result.stderr)
 
-        srpm_dst_path = os.path.join(self.repo_path, 'build', 'SRPMS')
+        srpm_dst_path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, 'SRPMS')
 
         # Build RPMs
         for arch in self.options.arch:
             result = self.rpm(arch)
             if not result:
                 ops.utils.exit(code=result.code, text=result.stderr)
-            arch_dst_path = os.path.join(self.repo_path, 'build', arch)
+            arch_dst_path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, arch)
             ops.utils.mkdir(arch_dst_path)
             # TODO(silas):  don't build multiple times on noarch
             ops.utils.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path)
