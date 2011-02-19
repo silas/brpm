@@ -1,10 +1,17 @@
+# Copyright (c) 2011, Silas Sewell
+# All rights reserved.
+#
+# This file is subject to the MIT License (see the LICENSE file).
+
 import fnmatch
 import glob
-import logging
-import os
+import json
+import logging as log
 import ops.utils
+import os
+import rpm
 
-logging.basicConfig(level=logging.INFO)
+log.basicConfig(level=log.INFO)
 
 class Break(Exception): pass
 
@@ -16,17 +23,25 @@ class Build(object):
         self.root_path = os.path.dirname(self.spec_path)
         self.build_path = os.path.join(self.root_path, 'build')
         self.repo_path = os.path.dirname(self.root_path)
+        try:
+            self.rpm_spec = rpm.ts().parseSpec(self.spec_path)
+        except Exception, error:
+            log.error('Unable to parse spec file: %s' % self.spec_path)
+            self.rpm_spec = None
 
     def run(self):
         ops.utils.rm(self.build_path, recursive=True)
         ops.utils.mkdir(self.build_path)
 
-        # Build RPMs
+        # Build repository directories
         for arch in ['SRPMS'] + self.options.arch:
             path = os.path.join(self.repo_path, 'build', arch)
             ops.utils.mkdir(path)
             if not os.path.exists(os.path.join(path, 'repodata')):
                 ops.utils.run('createrepo --update ${dst}', dst=path)
+
+        # Try to get source files if they don't exist locally
+        self.sources()
 
         # Build SRPM
         result = self.srpm()
@@ -58,6 +73,17 @@ class Build(object):
             # Update repository
             ops.utils.run('createrepo --update ${dst}', dst=arch_dst_path)
 
+    def sources(self):
+        if self.rpm_spec:
+            for src, _, _ in self.rpm_spec.sources:
+                name = None
+                for value in ('http://', 'https://', 'ftp://'):
+                    if src.startswith(value):
+                        dst = os.path.join(self.root_path, src.split('/')[-1])
+                        if not os.path.exists(dst):
+                            log.info('Retrieving source %s' % src)
+                            ops.utils.run('curl ${src} > ${dst}', src=src, dst=dst)
+
     def srpm(self):
         command = 'rpmbuild'
         if self.options.dist == 'epel-5':
@@ -85,8 +111,56 @@ class Build(object):
             srpm_path=self.srpm_path,
         )
 
-def main():
-    import json
+
+def build(file_list, options):
+    build_list = []
+
+    for path in file_list:
+        path = os.path.realpath(path)
+        if os.path.isdir(path):
+            file_list += glob.glob('*.spec')
+            continue
+        elif not os.path.isfile(path):
+            ops.utils.exit(code=1, text='File not found: %s' % path)
+        if fnmatch.fnmatch(path, '*.json'):
+            try:
+                with open(path) as f:
+                    bl = json.loads(f.read())
+                if not isinstance(bl, list):
+                    raise Exception()
+                root_path = os.path.dirname(path)
+                for data in bl:
+                    data['spec'] = os.path.realpath(os.path.join(root_path, data['spec']))
+                build_list += bl
+            except ValueError:
+                ops.utils.exit(code=1, text='Invalid json syntax')
+            except Exception, error:
+                ops.utils.exit(code=1, text='Invalid build file (%s)' % error)
+        elif fnmatch.fnmatch(path, '*.spec'):
+            build_list.append({'spec': os.path.realpath(path)})
+        else:
+            ops.utils.exit(code=1, text='Unknown file type: %s' % path)
+
+    if not build_list:
+        ops.utils.exit(code=1, text='Nothing to build')
+
+    for data in build_list:
+        try:
+            package = os.path.basename(data['spec'])[:-5]
+            if options.only:
+                if options.only != package:
+                    continue
+            elif options.start:
+                if options.start == package:
+                    options.start = ''
+                else:
+                    continue
+            log.info('Building %s' % package)
+            Build(options, data).run()
+        except Break:
+            pass
+
+def run():
     import optparse
 
     release = {
@@ -150,49 +224,4 @@ def main():
         if '' in options.arch:
             options.arch.remove('')
 
-    build_list = []
-
-    for path in args:
-        path = os.path.realpath(path)
-        if os.path.isdir(path):
-            args += glob.glob('*.spec')
-            continue
-        elif not os.path.isfile(path):
-            ops.utils.exit(code=1, text='File not found: %s' % path)
-        if fnmatch.fnmatch(path, '*.json'):
-            try:
-                with open(path) as f:
-                    bl = json.loads(f.read())
-                if not isinstance(bl, list):
-                    raise Exception()
-                root_path = os.path.dirname(path)
-                for data in bl:
-                    data['spec'] = os.path.realpath(os.path.join(root_path, data['spec']))
-                build_list += bl
-            except ValueError:
-                ops.utils.exit(code=1, text='Invalid json syntax')
-            except Exception, error:
-                ops.utils.exit(code=1, text='Invalid build file (%s)' % error)
-        elif fnmatch.fnmatch(path, '*.spec'):
-            build_list.append({'spec': os.path.realpath(path)})
-        else:
-            ops.utils.exit(code=1, text='Unknown file type: %s' % path)
-
-    if not build_list:
-        ops.utils.exit(code=1, text='Nothing to build')
-
-    for data in build_list:
-        try:
-            package = os.path.basename(data['spec'])[:-5]
-            if options.only:
-                if options.only != package:
-                    continue
-            elif options.start:
-                if options.start == package:
-                    options.start = ''
-                else:
-                    continue
-            print '%s\n%s' % ('#'*80, package)
-            Build(options, data).run()
-        except Break:
-            pass
+    build(args, options)

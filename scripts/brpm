@@ -3,4 +3,4 @@
 import brpm
 
 if __name__ == '__main__':
-    brpm.main()
+    brpm.run()

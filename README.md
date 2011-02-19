@@ -7,6 +7,7 @@ brpm is a simple tool that makes building RPMs locally a little easier.
 
 * Python >= 2.6
 * [createrepo](https://admin.fedoraproject.org/pkgdb/acls/name/createrepo)
+* [curl](https://admin.fedoraproject.org/pkgdb/acls/name/curl)
 * [mock](https://admin.fedoraproject.org/pkgdb/acls/name/mock)
 * [ops](https://github.com/opsdojo/ops)
 * [rpmbuild](https://admin.fedoraproject.org/pkgdb/acls/name/rpm)
