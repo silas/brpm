@@ -1,7 +1,7 @@
 brpm
 ====
 
-brpm is a simple tool that makes building RPMs locally a little easier.
+brpm is a simple tool for building RPMs.
 
 ### Usage
 
@@ -10,9 +10,9 @@ build machine:
 
     brpm
 
-Build `python-gevent.spec` for Fedora 13 i386 and x86\_64:
+Build `python-gevent.spec` for Fedora 16 i386 and x86\_64:
 
-    brpm --dist=fedora-13 --arch=i386,x86_64 ./python-gevent.spec
+    brpm --dist=fedora-16 --arch=i386,x86_64 ./python-gevent.spec
 
 If we have a `build.json` file which looks something like:
 
@@ -90,7 +90,7 @@ And `cd` back to `rpm` and run `tree` again:
 * [createrepo](https://admin.fedoraproject.org/pkgdb/acls/name/createrepo)
 * [curl](https://admin.fedoraproject.org/pkgdb/acls/name/curl)
 * [mock](https://admin.fedoraproject.org/pkgdb/acls/name/mock)
-* [ops](https://github.com/opsdojo/ops)
+* [ops](https://github.com/silas/ops)
 * [rpmbuild](https://admin.fedoraproject.org/pkgdb/acls/name/rpm)
 
 ### Licenses
