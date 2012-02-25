@@ -10,5 +10,5 @@ setup(
     license='MIT License',
     url='https://github.com/silas/brpm',
     packages=['brpm'],
-    scripts=['scripts/brpm'],
+    scripts=['brpm'],
 )
