@@ -7,7 +7,7 @@ import fnmatch
 import glob
 import json
 import logging as log
-import ops.utils as utils
+import ops
 import os
 import rpm
 
@@ -32,15 +32,15 @@ class Build(object):
 
     def run(self):
         if os.path.exists(self.build_path):
-            utils.rm(self.build_path, recursive=True)
-        utils.mkdir(self.build_path)
+            ops.rm(self.build_path, recursive=True)
+        ops.mkdir(self.build_path)
 
         # Build repository directories
         for arch in ['SRPMS'] + self.options.arch:
             path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, arch)
-            utils.mkdir(path)
+            ops.mkdir(path)
             if not os.path.exists(os.path.join(path, 'repodata')):
-                utils.run('createrepo --update ${dst}', dst=path)
+                ops.run('createrepo --update ${dst}', dst=path)
 
         # Try to get source files if they don't exist locally
         self.sources()
@@ -50,7 +50,7 @@ class Build(object):
         if result:
             self.srpm_path = result.stdout.strip()[7:]
         else:
-            utils.exit(code=result.code, text=result.stderr)
+            ops.exit(code=result.code, text=result.stderr)
 
         srpm_dst_path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, 'SRPMS')
 
@@ -58,12 +58,12 @@ class Build(object):
         for arch in self.options.arch:
             result = self.rpm(arch)
             if not result:
-                utils.exit(code=result.code, text=result.stderr)
+                ops.exit(code=result.code, text=result.stderr)
             arch_dst_path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, arch)
-            utils.mkdir(arch_dst_path)
+            ops.mkdir(arch_dst_path)
             # TODO(silas):  don't build multiple times on noarch
-            utils.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path)
-            utils.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=arch, dst=arch_dst_path)
+            ops.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path)
+            ops.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=arch, dst=arch_dst_path)
             # Find and move distribution srpm
             srpms = glob.glob(os.path.join(self.build_path, '*.src.rpm'))
             srpms = [os.path.basename(path) for path in srpms]
@@ -71,9 +71,9 @@ class Build(object):
             if srpm_name in srpms:
                 srpms.remove(srpm_name)
             srpm_path = os.path.join(self.build_path, srpms[0]) if srpms else self.srpm_path
-            utils.run('mv ${src} ${dst}', src=srpm_path, dst=srpm_dst_path)
+            ops.run('mv ${src} ${dst}', src=srpm_path, dst=srpm_dst_path)
             # Update repository
-            utils.run('createrepo --update ${dst}', dst=arch_dst_path)
+            ops.run('createrepo --update ${dst}', dst=arch_dst_path)
 
     def sources(self):
         if self.rpm_spec:
@@ -84,7 +84,7 @@ class Build(object):
                         dst = os.path.join(self.root_path, src.split('/')[-1])
                         if not os.path.exists(dst):
                             log.info('Retrieving source %s' % src)
-                            utils.run('curl -L ${src} > ${dst}', src=src, dst=dst)
+                            ops.run('curl -L ${src} > ${dst}', src=src, dst=dst)
 
     def srpm(self):
         command = 'rpmbuild'
@@ -94,7 +94,7 @@ class Build(object):
         command += ' --define "_specdir ${root_path}"'
         command += ' --define "_srcrpmdir ${build_path}"'
         command += ' -bs --nodeps "${spec_path}"'
-        return utils.run(
+        return ops.run(
             command,
             build_path=self.build_path,
             spec_path=self.spec_path,
@@ -105,7 +105,7 @@ class Build(object):
         command = 'mock -vr ${dist}-${arch}'
         command += ' --resultdir=${build_path}'
         command += ' ${srpm_path}'
-        return utils.run(
+        return ops.run(
             command,
             dist=self.options.dist,
             arch=arch,
@@ -123,7 +123,7 @@ def build(file_list, options):
             file_list += glob.glob('*.spec')
             continue
         elif not os.path.isfile(path):
-            utils.exit(code=1, text='File not found: %s' % path)
+            ops.exit(code=1, text='File not found: %s' % path)
         if fnmatch.fnmatch(path, '*.json'):
             try:
                 with open(path) as f:
@@ -135,16 +135,16 @@ def build(file_list, options):
                     data['spec'] = os.path.realpath(os.path.join(root_path, data['spec']))
                 build_list += bl
             except ValueError:
-                utils.exit(code=1, text='Invalid json syntax')
+                ops.exit(code=1, text='Invalid json syntax')
             except Exception, error:
-                utils.exit(code=1, text='Invalid build file (%s)' % error)
+                ops.exit(code=1, text='Invalid build file (%s)' % error)
         elif fnmatch.fnmatch(path, '*.spec'):
             build_list.append({'spec': os.path.realpath(path)})
         else:
-            utils.exit(code=1, text='Unknown file type: %s' % path)
+            ops.exit(code=1, text='Unknown file type: %s' % path)
 
     if not build_list:
-        utils.exit(code=1, text='Nothing to build')
+        ops.exit(code=1, text='Nothing to build')
 
     for data in build_list:
         try:
@@ -178,7 +178,7 @@ def run():
                 dist = '%s-%s' % (name, version)
                 break
 
-    arch = utils.run('uname -m').stdout.strip()
+    arch = ops.run('uname -m').stdout.strip()
     if arch != 'x86_64':
         arch == 'i386'
 
@@ -220,10 +220,10 @@ def run():
         args = ['.']
 
     if not options.dist:
-        utils.exit(code=1, text='Dist option is required')
+        ops.exit(code=1, text='Dist option is required')
 
     if not options.arch:
-        utils.exit(code=1, text='Architecture is required')
+        ops.exit(code=1, text='Arch is required')
     else:
         options.arch = [arch.strip() for arch in options.arch.split(',')]
         if '' in options.arch:
