@@ -193,18 +193,21 @@ def run():
         metavar='DIST',
     )
     parser.add_option(
+        '-s',
         '--start',
         dest='start',
         help='start building with PACKAGE',
         metavar='PACKAGE',
     )
     parser.add_option(
+        '-o',
         '--only',
         dest='only',
         help='build only PACKAGE',
         metavar='PACKAGE',
     )
     parser.add_option(
+        '-a',
         '--arch',
         dest='arch',
         default=arch,
