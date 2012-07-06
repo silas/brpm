@@ -50,7 +50,7 @@ class Build(object):
         if result:
             self.srpm_path = result.stdout.strip()[7:]
         else:
-            ops.exit(code=result.code, text=result.stderr)
+            ops.exit(code=result.code)
 
         srpm_dst_path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, 'SRPMS')
 
@@ -111,6 +111,8 @@ class Build(object):
             arch=arch,
             build_path=self.build_path,
             srpm_path=self.srpm_path,
+            stdout=True,
+            stderr=True,
         )
 
 
