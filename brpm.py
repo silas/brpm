@@ -24,6 +24,7 @@ class Build(object):
         self.root_path = os.path.dirname(self.spec_path)
         self.build_path = os.path.join(self.root_path, 'build')
         self.repo_path = os.path.dirname(self.root_path)
+        self.ops_run = dict(stdout=True, stderr=True)
         try:
             self.rpm_spec = rpm.ts().parseSpec(self.spec_path)
         except Exception, error:
@@ -40,7 +41,7 @@ class Build(object):
             path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, arch)
             ops.mkdir(path)
             if not os.path.exists(os.path.join(path, 'repodata')):
-                ops.run('createrepo --update ${dst}', dst=path)
+                ops.run('createrepo --update ${dst}', dst=path, **self.ops_run)
 
         # Try to get source files if they don't exist locally
         self.sources()
@@ -62,8 +63,8 @@ class Build(object):
             arch_dst_path = os.path.join(self.repo_path, 'build', self.dist_name, self.dist_version, arch)
             ops.mkdir(arch_dst_path)
             # TODO(silas):  don't build multiple times on noarch
-            ops.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path)
-            ops.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=arch, dst=arch_dst_path)
+            ops.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path, **self.ops_run)
+            ops.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=arch, dst=arch_dst_path, **self.ops_run)
             # Find and move distribution srpm
             srpms = glob.glob(os.path.join(self.build_path, '*.src.rpm'))
             srpms = [os.path.basename(path) for path in srpms]
@@ -71,9 +72,9 @@ class Build(object):
             if srpm_name in srpms:
                 srpms.remove(srpm_name)
             srpm_path = os.path.join(self.build_path, srpms[0]) if srpms else self.srpm_path
-            ops.run('mv ${src} ${dst}', src=srpm_path, dst=srpm_dst_path)
+            ops.run('mv ${src} ${dst}', src=srpm_path, dst=srpm_dst_path, **self.ops_run)
             # Update repository
-            ops.run('createrepo --update ${dst}', dst=arch_dst_path)
+            ops.run('createrepo --update ${dst}', dst=arch_dst_path, **self.ops_run)
 
     def sources(self):
         if self.rpm_spec:
@@ -84,7 +85,7 @@ class Build(object):
                         dst = os.path.join(self.root_path, src.split('/')[-1])
                         if not os.path.exists(dst):
                             log.info('Retrieving source %s' % src)
-                            ops.run('curl -L ${src} > ${dst}', src=src, dst=dst)
+                            ops.run('curl -L ${src} > ${dst}', src=src, dst=dst, **self.ops_run)
 
     def srpm(self):
         command = 'rpmbuild'
@@ -99,6 +100,7 @@ class Build(object):
             build_path=self.build_path,
             spec_path=self.spec_path,
             root_path=self.root_path,
+            **self.ops_run
         )
 
     def rpm(self, arch):
@@ -111,8 +113,7 @@ class Build(object):
             arch=arch,
             build_path=self.build_path,
             srpm_path=self.srpm_path,
-            stdout=True,
-            stderr=True,
+            **self.ops_run
         )
 
 
