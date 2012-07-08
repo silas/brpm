@@ -64,7 +64,11 @@ class Build(object):
             ops.mkdir(arch_dst_path)
             # TODO(silas):  don't build multiple times on noarch
             ops.run('mv ${src}/*.noarch.rpm ${dst}', src=self.build_path, dst=arch_dst_path, **self.ops_run)
-            ops.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=arch, dst=arch_dst_path, **self.ops_run)
+            arch_list = [arch]
+            if arch == 'i386':
+                arch_list.append('i686')
+            for a in arch_list:
+                ops.run('mv ${src}/*${arch}.rpm ${dst}', src=self.build_path, arch=a, dst=arch_dst_path, **self.ops_run)
             # Find and move distribution srpm
             srpms = glob.glob(os.path.join(self.build_path, '*.src.rpm'))
             srpms = [os.path.basename(path) for path in srpms]
