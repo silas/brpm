@@ -89,7 +89,7 @@ class Build(object):
                         dst = os.path.join(self.root_path, src.split('/')[-1])
                         if not os.path.exists(dst):
                             log.info('Retrieving source %s' % src)
-                            ops.run('curl -L ${src} > ${dst}', src=src, dst=dst, **self.ops_run)
+                            ops.run('curl -sL ${src} > ${dst}', src=src, dst=dst, **self.ops_run)
 
     def srpm(self):
         command = 'rpmbuild'
