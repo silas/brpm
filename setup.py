@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='brpm',
-    version='0.4.0',
+    version='0.4.1',
     description='A tool for building RPM packages',
     long_description='brpm is a simple tool for building RPMs.',
     author='Silas Sewell',
