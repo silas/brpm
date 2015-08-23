@@ -13,8 +13,6 @@ Vagrant.configure('2') do |config|
   end
 
   config.vm.provision :shell, inline: <<-eof
-    test -f /usr/local/bin/brpm && exit
-
     set -o errexit
 
     yum install -y \
