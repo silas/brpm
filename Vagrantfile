@@ -5,8 +5,8 @@ Vagrant.configure('2') do |config|
     '--memory', ENV['BUILD_MEMORY'] || 1024,
   ]
 
-  config.vm.box = 'fedora-18'
-  config.vm.box_url = 'http://puppet-vagrant-boxes.puppetlabs.com/fedora-18-x64-vbox4210.box'
+  config.vm.box = 'fedora-22'
+  config.vm.box_url = 'https://download.fedoraproject.org/pub/fedora/linux/releases/22/Cloud/x86_64/Images/Fedora-Cloud-Base-Vagrant-22-20150521.x86_64.vagrant-virtualbox.box'
 
   config.vm.provider :virtualbox do |v|
     v.customize customize
